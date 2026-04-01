@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PNW Memory Map — Introduction</title>
+<link rel="stylesheet" href="https://use.typekit.net/otl6ozb.css">
+<style>
+  :root {
+    --bg: #19212E;
+    --accent: #5154F0;
+    --font: 'articulat-cf', 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--bg);
+    background-image: url("tile.svg");
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    font-family: var(--font);
+    letter-spacing: -0.02em;
+    overflow-x: hidden;
+  }
+
+  /* ── SVG SCROLL CONTAINER ── */
+  #svg-scroll {
+    position: relative;
+    width: 100%;
+  }
+
+  #svg-scroll img.map-svg {
+    /* Render the SVG at its natural 1680px width, scaled to viewport */
+    width: 100%;
+    display: block;
+  }
+
+  /* ── GRAPHIC OVERLAY ── */
+  /* Fixed to the right 50% of the screen, centered */
+  #graphic-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  #graphic-overlay img {
+    max-width: 80%;
+    max-height: 80vh;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  #graphic-overlay img.visible {
+    opacity: 1;
+  }
+
+  /* ── GO TO MAPS BUTTON ── */
+  #maps-btn-wrap {
+    position: fixed;
+    /* left-aligned with the text at x=161/1680 = 9.6% of SVG width
+       SVG fills 100vw so left = 9.6vw */
+    left: 9.6%;
+    /* bottom 25% of vh */
+    bottom: 25vh;
+    z-index: 30;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+  }
+  #maps-btn-wrap.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .go-to-maps-btn {
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 3px;
+    color: #ffffff;
+    font-size: 10px;
+    font-family: 'articulat-cf', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .go-to-maps-btn:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
+  .go-to-maps-btn svg { width: 10px; height: 10px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- The full tall SVG scrolls normally -->
+<div id="svg-scroll">
+  <img class="map-svg" src="reading_map_2.svg" alt="How to read the maps">
+</div>
+
+<!-- Graphic overlay: fixed to right half, swaps on scroll -->
+<div id="graphic-overlay">
+  <img id="graphic-img" src="" alt="">
+</div>
+
+<!-- Go to maps button, appears on INTRO7 -->
+<div id="maps-btn-wrap">
+  <a href="https://cquintos-23.github.io/pnw-maps/" class="go-to-maps-btn">
+    Go to the maps
+    <svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"
+            stroke="currentColor" stroke-width="1.3"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </a>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// INTRO FRAMES
+// Each entry: the Y position of that frame in the SVG (px at
+// 1680px wide), and the graphic PNG to show when it's active.
+// INTRO1 has no graphic (it's the title/base screen).
+// ─────────────────────────────────────────────────────────────
+const FRAMES = [
+  { svgY: 0,    graphic: null },          // INTRO1 — no graphic
+  { svgY: 1200, graphic: 'graphic2.png' }, // INTRO2
+  { svgY: 2400, graphic: 'graphic3.png' }, // INTRO3
+  { svgY: 3600, graphic: 'graphic4.png' }, // INTRO4
+  { svgY: 4800, graphic: 'graphic5.png' }, // INTRO5
+  { svgY: 6000, graphic: 'graphic6.png' }, // INTRO6
+  { svgY: 7200, graphic: 'graphic7.png' }, // INTRO7
+];
+
+const overlayImg  = document.getElementById('graphic-img');
+const mapsBtnWrap = document.getElementById('maps-btn-wrap');
+const svgEl       = document.querySelector('#svg-scroll img.map-svg');
+
+let currentGraphic = null;
+let svgRenderedWidth = 0;
+let scale = 1;
+
+// SVG native width
+const SVG_NATIVE_W = 1680;
+const SVG_NATIVE_H = 8400;
+const FRAME_H      = 1200; // each INTRO frame height in SVG units
+
+function getScale() {
+  // How much the SVG is scaled down to fit the viewport
+  return svgEl.getBoundingClientRect().width / SVG_NATIVE_W;
+}
+
+function onScroll() {
+  scale = getScale();
+
+  // How far the top of the SVG is from the top of the viewport
+  const svgTop = svgEl.getBoundingClientRect().top;
+
+  // The vertical center of the screen in SVG coordinates
+  const screenCenterInSVG = (window.innerHeight / 2 - svgTop) / scale;
+
+  // Find which INTRO frame's top has passed the screen center
+  // i.e. the last frame whose svgY <= screenCenterInSVG
+  let activeFrame = null;
+  for (let i = 0; i < FRAMES.length; i++) {
+    if (FRAMES[i].svgY <= screenCenterInSVG) {
+      activeFrame = FRAMES[i];
+    }
+  }
+
+  const newGraphic = activeFrame ? activeFrame.graphic : null;
+
+  if (newGraphic !== currentGraphic) {
+    currentGraphic = newGraphic;
+
+    if (newGraphic) {
+      overlayImg.src = newGraphic;
+      overlayImg.classList.add('visible');
+    } else {
+      overlayImg.classList.remove('visible');
+    }
+
+    // Show maps button on INTRO7
+    const onLast = activeFrame === FRAMES[FRAMES.length - 1];
+    mapsBtnWrap.classList.toggle('visible', onLast);
+  }
+}
+
+window.addEventListener('scroll', onScroll, { passive: true });
+window.addEventListener('resize', onScroll);
+
+// Run once on load
+svgEl.addEventListener('load', onScroll);
+onScroll();
+</script>
+</body>
+</html>
