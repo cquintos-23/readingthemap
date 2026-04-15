@@ -24,6 +24,65 @@
     overflow-x: hidden;
   }
 
+  /* ── HOME SCREEN ── */
+  #home-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg);
+    background-image: url("tile.svg");
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    transition: opacity 0.5s ease;
+  }
+
+  #home-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* The inline SVG fills the screen */
+  #home-screen svg,
+  #home-screen .svg-wrapper {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+  }
+
+  #home-screen .svg-wrapper {
+    position: relative;
+  }
+
+  /* Fallback while SVG loads via fetch */
+  #home-svg-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #home-svg-container svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* ── SCROLLYTELLING CONTENT (hidden until pnw is clicked) ── */
+  #scrolly-content {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  #scrolly-content.visible {
+    display: block;
+    opacity: 1;
+  }
+
   /* ── SVG SCROLL CONTAINER ── */
   #svg-scroll {
     position: relative;
@@ -31,13 +90,11 @@
   }
 
   #svg-scroll img.map-svg {
-    /* Render the SVG at its natural 1680px width, scaled to viewport */
     width: 100%;
     display: block;
   }
 
   /* ── GRAPHIC OVERLAY ── */
-  /* Fixed to the right 50% of the screen, centered */
   #graphic-overlay {
     position: fixed;
     top: 0;
@@ -52,7 +109,7 @@
   }
 
   #graphic-overlay img {
-    max-width: 80%;
+    max-width: 85%;
     max-height: 80vh;
     object-fit: contain;
     opacity: 0;
@@ -63,13 +120,42 @@
     opacity: 1;
   }
 
+  /* ── ABOUT BACK BUTTON ── */
+  #about-back-btn {
+    position: fixed;
+    left: 9.6%;
+    bottom: 25vh;
+    z-index: 200;
+    display: none;
+  }
+  #about-back-btn.visible {
+    display: inline-flex;
+  }
+
+  /* ── INTRO BUTTONS (frame 1 only) ── */
+  #intro-btns {
+    position: fixed;
+    left: 9.6%;
+    top: 50vh;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+  }
+  #intro-btns.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
   /* ── GO TO MAPS BUTTON ── */
   #maps-btn-wrap {
     position: fixed;
-    /* left-aligned with the text at x=161/1680 = 9.6% of SVG width
-       SVG fills 100vw so left = 9.6vw */
     left: 9.6%;
-    /* bottom 25% of vh */
     bottom: 25vh;
     z-index: 30;
     opacity: 0;
@@ -105,105 +191,336 @@
 </head>
 <body>
 
-<!-- The full tall SVG scrolls normally -->
-<div id="svg-scroll">
-  <img class="map-svg" src="reading_map_2.svg" alt="How to read the maps">
+<!-- ── HOME SCREEN ── -->
+<div id="home-screen">
+  <div id="home-svg-container">
+    <!-- HOME.svg is fetched and injected inline so we can manipulate its DOM -->
+    <span style="color:rgba(255,255,255,0.3); font-family: var(--font); font-size:13px;">Loading…</span>
+  </div>
 </div>
 
-<!-- Graphic overlay: fixed to right half, swaps on scroll -->
-<div id="graphic-overlay">
-  <img id="graphic-img" src="" alt="">
-</div>
+<!-- ── ABOUT BACK BUTTON ── -->
+<button id="about-back-btn" class="go-to-maps-btn" onclick="showSvgScreen('HOME.svg')">
+  <svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(180deg)">
+    <path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"
+          stroke="currentColor" stroke-width="1.3"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  Back
+</button>
 
-<!-- Go to maps button, appears on INTRO7 -->
-<div id="maps-btn-wrap">
-  <a href="https://cquintos-23.github.io/pnw-maps/" class="go-to-maps-btn">
-    Go to the maps
-    <svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"
-            stroke="currentColor" stroke-width="1.3"
-            stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </a>
-</div>
+<!-- ── SCROLLYTELLING CONTENT (original page) ── -->
+<div id="scrolly-content">
+
+  <!-- The full tall SVG scrolls normally -->
+  <div id="svg-scroll">
+    <img class="map-svg" src="reading_map_2.svg" alt="How to read the maps">
+  </div>
+
+  <!-- Graphic overlay: fixed to right half, swaps on scroll -->
+  <div id="graphic-overlay">
+    <img id="graphic-img" src="" alt="">
+  </div>
+
+  <!-- Intro buttons, visible on INTRO1 only -->
+  <div id="intro-btns">
+    <button class="go-to-maps-btn" onclick="showHome()" style="background:none; border:1px solid rgba(255,255,255,0.6); cursor:pointer;">
+      <svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(180deg)">
+        <path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back
+    </button>
+    <a href="https://cquintos-23.github.io/pnw-maps/" class="go-to-maps-btn">
+      Skip to the maps
+      <svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- Go to maps button, appears on INTRO7 -->
+  <div id="maps-btn-wrap">
+    <a href="https://cquintos-23.github.io/pnw-maps/" class="go-to-maps-btn">
+      Go to the maps
+      <svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5"
+              stroke="currentColor" stroke-width="1.3"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </div>
+
+</div><!-- end #scrolly-content -->
 
 <script>
 // ─────────────────────────────────────────────────────────────
-// INTRO FRAMES
-// Each entry: the Y position of that frame in the SVG (px at
-// 1680px wide), and the graphic PNG to show when it's active.
-// INTRO1 has no graphic (it's the title/base screen).
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────
+const HOVER_FILL    = '#9AC993';
+const NOSTALGIA_URL = 'https://cquintos-23.github.io/nostalgia/';
+
+// Each nav item: id matches the <g id="..."> in the SVG
+// action: 'about' | 'scrolly' | 'url'
+const NAV_ITEMS = [
+  { id: 'about', action: 'about' },
+  { id: 'pnw',   action: 'scrolly' },
+  { id: 'mb',    action: 'url', url: NOSTALGIA_URL },
+  { id: 'nd',    action: 'url', url: NOSTALGIA_URL },
+];
+
+// ─────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────
+let currentScreen = 'HOME.svg';
+
+// ─────────────────────────────────────────────────────────────
+// FETCH + INLINE AN SVG
+// ─────────────────────────────────────────────────────────────
+async function fetchInlineSVG(url) {
+  const res  = await fetch(url);
+  const text = await res.text();
+  const parser = new DOMParser();
+  const doc  = parser.parseFromString(text, 'image/svg+xml');
+  const svg  = doc.documentElement;
+  svg.setAttribute('width',  '100%');
+  svg.setAttribute('height', '100%');
+  svg.style.display = 'block';
+  return svg;
+}
+
+// ─────────────────────────────────────────────────────────────
+// GET ALL TEXT/TSPAN ELEMENTS INSIDE A FRAME GROUP
+// The SVG structure is: <g id="pnw"><rect .../><g id="..."><text>...</text></g></g>
+// We grab every <text> and <tspan> inside the top-level <g id="pnw">.
+// ─────────────────────────────────────────────────────────────
+function getTextEls(svgEl, frameId) {
+  const group = svgEl.getElementById(frameId);
+  if (!group) return [];
+  return [...group.querySelectorAll('text, tspan')];
+}
+
+// ─────────────────────────────────────────────────────────────
+// STORE + RESTORE FILLS
+// SVG fills can live on the attribute OR inline style.
+// We snapshot both and restore exactly what was there.
+// ─────────────────────────────────────────────────────────────
+function snapshotFills(els) {
+  return els.map(el => ({
+    el,
+    attr:  el.getAttribute('fill'),       // null if absent
+    style: el.style.getPropertyValue('fill'), // '' if absent
+  }));
+}
+
+function applyFill(els, color) {
+  els.forEach(el => {
+    el.setAttribute('fill', color);
+    el.style.setProperty('fill', color, 'important');
+  });
+}
+
+function restoreFills(snapshots) {
+  snapshots.forEach(({ el, attr, style }) => {
+    if (style) {
+      el.style.setProperty('fill', style, 'important');
+    } else {
+      el.style.removeProperty('fill');
+    }
+    if (attr !== null) el.setAttribute('fill', attr);
+    else el.removeAttribute('fill');
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// APPLY NAV INTERACTIONS TO AN SVG ELEMENT
+// ─────────────────────────────────────────────────────────────
+function applyNavInteractions(svgEl) {
+  NAV_ITEMS.forEach(item => {
+    const group = svgEl.getElementById(item.id);
+    if (!group) return;
+
+    const textEls  = getTextEls(svgEl, item.id);
+    const snapshot = snapshotFills(textEls);
+
+    group.style.cursor = 'pointer';
+
+    // Hover in — always change fill color
+    group.addEventListener('mouseenter', () => {
+      applyFill(textEls, HOVER_FILL);
+    });
+
+    // Hover out — restore original fills
+    group.addEventListener('mouseleave', () => {
+      restoreFills(snapshot);
+    });
+
+    // Click — action
+    group.addEventListener('click', () => {
+      if (item.action === 'about') {
+        showSvgScreen('ABOUT.svg');
+      } else if (item.action === 'scrolly') {
+        launchScrolly();
+      } else if (item.action === 'url') {
+        window.location.href = item.url;
+      }
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// SHOW AN SVG SCREEN (HOME or ABOUT)
+// ─────────────────────────────────────────────────────────────
+const svgCache = {};
+
+async function showSvgScreen(svgFile) {
+  if (currentScreen === svgFile) return;
+  currentScreen = svgFile;
+
+  const container  = document.getElementById('home-svg-container');
+  const backBtn    = document.getElementById('about-back-btn');
+
+  if (!svgCache[svgFile]) {
+    svgCache[svgFile] = await fetchInlineSVG(svgFile);
+    // Apply nav interactions only to HOME (ABOUT has no nav frames)
+    if (svgFile === 'HOME.svg') applyNavInteractions(svgCache[svgFile]);
+  }
+
+  // Fade out
+  container.style.transition = 'opacity 0.3s ease';
+  container.style.opacity = '0';
+
+  await new Promise(r => setTimeout(r, 300));
+
+  container.innerHTML = '';
+  container.appendChild(svgCache[svgFile]);
+
+  // Show/hide back button
+  backBtn.classList.toggle('visible', svgFile === 'ABOUT.svg');
+
+  // Fade in
+  requestAnimationFrame(() => {
+    container.style.opacity = '1';
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// LAUNCH SCROLLYTELLING
+// ─────────────────────────────────────────────────────────────
+function launchScrolly() {
+  const homeScreen    = document.getElementById('home-screen');
+  const scrollyContent = document.getElementById('scrolly-content');
+
+  // Fade out home
+  homeScreen.classList.add('hidden');
+
+  // Show scrolly
+  scrollyContent.style.display = 'block';
+  requestAnimationFrame(() => {
+    scrollyContent.classList.add('visible');
+  });
+
+  // Remove home from layout after transition
+  setTimeout(() => {
+    homeScreen.style.display = 'none';
+    svgEl.addEventListener('load', onScroll);
+    // Scroll to top and kick off frame detection immediately
+    window.scrollTo(0, 0);
+    onScroll();
+  }, 550);
+}
+
+// ─────────────────────────────────────────────────────────────
+// SCROLLYTELLING LOGIC (original)
 // ─────────────────────────────────────────────────────────────
 const FRAMES = [
-  { svgY: 0,    graphic: null },          // INTRO1 — no graphic
-  { svgY: 1200, graphic: 'graphic2.png' }, // INTRO2
-  { svgY: 2400, graphic: 'graphic3.png' }, // INTRO3
-  { svgY: 3600, graphic: 'graphic4.png' }, // INTRO4
-  { svgY: 4800, graphic: 'graphic5.png' }, // INTRO5
-  { svgY: 6000, graphic: 'graphic6.png' }, // INTRO6
-  { svgY: 7200, graphic: 'graphic7.png' }, // INTRO7
+  { svgY: 0,    graphic: null },
+  { svgY: 1200, graphic: 'graphic2.png' },
+  { svgY: 2400, graphic: 'graphic3.png' },
+  { svgY: 3600, graphic: 'graphic4.png' },
+  { svgY: 4800, graphic: 'graphic5.png' },
+  { svgY: 6000, graphic: 'graphic6.png' },
+  { svgY: 7200, graphic: 'graphic7.png' },
 ];
 
 const overlayImg  = document.getElementById('graphic-img');
 const mapsBtnWrap = document.getElementById('maps-btn-wrap');
+const introBtns   = document.getElementById('intro-btns');
 const svgEl       = document.querySelector('#svg-scroll img.map-svg');
 
 let currentGraphic = null;
-let svgRenderedWidth = 0;
-let scale = 1;
-
-// SVG native width
 const SVG_NATIVE_W = 1680;
-const SVG_NATIVE_H = 8400;
-const FRAME_H      = 1200; // each INTRO frame height in SVG units
-
-function getScale() {
-  // How much the SVG is scaled down to fit the viewport
-  return svgEl.getBoundingClientRect().width / SVG_NATIVE_W;
-}
 
 function onScroll() {
-  scale = getScale();
-
-  // How far the top of the SVG is from the top of the viewport
+  const scale = svgEl.getBoundingClientRect().width / SVG_NATIVE_W;
   const svgTop = svgEl.getBoundingClientRect().top;
-
-  // The vertical center of the screen in SVG coordinates
   const screenCenterInSVG = (window.innerHeight / 2 - svgTop) / scale;
 
-  // Find which INTRO frame's top has passed the screen center
-  // i.e. the last frame whose svgY <= screenCenterInSVG
   let activeFrame = null;
   for (let i = 0; i < FRAMES.length; i++) {
-    if (FRAMES[i].svgY <= screenCenterInSVG) {
-      activeFrame = FRAMES[i];
-    }
+    if (FRAMES[i].svgY <= screenCenterInSVG) activeFrame = FRAMES[i];
   }
 
   const newGraphic = activeFrame ? activeFrame.graphic : null;
 
   if (newGraphic !== currentGraphic) {
     currentGraphic = newGraphic;
-
     if (newGraphic) {
       overlayImg.src = newGraphic;
       overlayImg.classList.add('visible');
     } else {
       overlayImg.classList.remove('visible');
     }
-
-    // Show maps button on INTRO7
-    const onLast = activeFrame === FRAMES[FRAMES.length - 1];
+    const onLast  = activeFrame === FRAMES[FRAMES.length - 1];
+    const onFirst = activeFrame === FRAMES[0];
     mapsBtnWrap.classList.toggle('visible', onLast);
+    introBtns.classList.toggle('visible', onFirst);
   }
+}
+
+// ── SHOW HOME — restores the home screen from scrollytelling ──
+function showHome() {
+  const homeScreen     = document.getElementById('home-screen');
+  const scrollyContent = document.getElementById('scrolly-content');
+
+  // Fade out scrolly
+  scrollyContent.classList.remove('visible');
+
+  setTimeout(() => {
+    scrollyContent.style.display = 'none';
+    // Restore home screen
+    homeScreen.style.display = 'flex';
+    homeScreen.style.opacity = '0';
+    currentScreen = ''; // allow re-show
+    requestAnimationFrame(() => {
+      homeScreen.style.transition = 'opacity 0.5s ease';
+      homeScreen.style.opacity = '1';
+      homeScreen.classList.remove('hidden');
+    });
+    // Scroll back to top
+    window.scrollTo(0, 0);
+  }, 500);
 }
 
 window.addEventListener('scroll', onScroll, { passive: true });
 window.addEventListener('resize', onScroll);
 
-// Run once on load
-svgEl.addEventListener('load', onScroll);
-onScroll();
+// ─────────────────────────────────────────────────────────────
+// INIT — load HOME.svg on page load
+// ─────────────────────────────────────────────────────────────
+(async () => {
+  const container = document.getElementById('home-svg-container');
+  try {
+    const homeSvg = await fetchInlineSVG('HOME.svg');
+    svgCache['HOME.svg'] = homeSvg;
+    applyNavInteractions(homeSvg);
+    container.innerHTML = '';
+    container.appendChild(homeSvg);
+    currentScreen = 'HOME.svg';
+  } catch (e) {
+    container.innerHTML = `<span style="color:rgba(255,255,255,0.4);font-family:sans-serif;font-size:13px;">Could not load HOME.svg</span>`;
+    console.warn('HOME.svg load error:', e);
+  }
+})();
 </script>
 </body>
 </html>
